@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produits - Gestion Commerciale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header"><i class="bi bi-briefcase-fill"></i>
+            <h2>Gestion Commerciale</h2>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Menu Principal</div>
+            <a href="dashboard.html" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
+            <a href="clients.html" class="nav-item"><i class="bi bi-people"></i><span>Clients</span></a>
+            <a href="produits.html" class="nav-item active"><i class="bi bi-box-seam"></i><span>Produits</span></a>
+            <a href="devis.html" class="nav-item"><i class="bi bi-file-text"></i><span>Devis</span></a>
+            <a href="factures.html" class="nav-item"><i class="bi bi-receipt"></i><span>Factures</span></a>
+            <div class="nav-section">Communication</div>
+            <a href="chat.html" class="nav-item"><i class="bi bi-chat-dots"></i><span>Messagerie</span></a>
+            <div class="nav-section admin-only" id="adminSection" style="display:none;">Administration</div>
+            <a href="users.html" class="nav-item admin-only" id="usersLink" style="display:none;"><i
+                    class="bi bi-person-gear"></i><span>Utilisateurs</span></a>
+            <a href="statistics.html" class="nav-item admin-only" id="statsLink" style="display:none;"><i
+                    class="bi bi-graph-up"></i><span>Statistiques</span></a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">Gestion des Produits</h1>
+            <div class="user-menu">
+                <div class="dropdown">
+                    <div class="user-info" data-bs-toggle="dropdown">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userName">Utilisateur</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i
+                                    class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <h3><i class="bi bi-box-seam me-2"></i>Liste des Produits</h3>
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Rechercher..."
+                                oninput="filterProduits()">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="bi bi-plus-lg me-2"></i>Nouveau Produit
+                    </button>
+                </div>
+                <div class="data-card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Nom</th>
+                                    <th>Catégorie</th>
+                                    <th>Prix</th>
+                                    <th>Stock</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="produitsTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="produitModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Nouveau Produit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="produitForm" onsubmit="return saveProduit(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="produitId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Référence</label>
+                                <input type="text" class="form-control" id="reference">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Catégorie</label>
+                                <select class="form-control" id="categorie">
+                                    <option value="">-- Sélectionner --</option>
+                                    <option value="Électronique">Électronique</option>
+                                    <option value="Informatique">Informatique</option>
+                                    <option value="Bureautique">Bureautique</option>
+                                    <option value="Mobilier">Mobilier</option>
+                                    <option value="Fournitures">Fournitures</option>
+                                    <option value="Services">Services</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nom *</label>
+                            <input type="text" class="form-control" id="nom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="2"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Prix unitaire (MAD) *</label>
+                                <input type="number" step="0.01" class="form-control" id="prixUnitaire" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">TVA (%)</label>
+                                <input type="number" step="0.01" class="form-control" id="tva" value="20">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Stock *</label>
+                                <input type="number" class="form-control" id="stock" required>
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="actif" checked>
+                            <label class="form-check-label" for="actif">Produit actif</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        if (!protectPage()) throw new Error('Not authenticated');
+
+        let produits = [];
+        let produitModal;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            if (isAdmin()) {
+                document.getElementById('adminSection').style.display = '';
+                document.getElementById('usersLink').style.display = '';
+                document.getElementById('statsLink').style.display = '';
+            }
+            produitModal = new bootstrap.Modal(document.getElementById('produitModal'));
+            await loadProduits();
+        });
+
+        async function loadProduits() {
+            try {
+                produits = await apiCall('/api/produits') || [];
+                renderProduits(produits);
+            } catch (error) {
+                showToast('Erreur lors du chargement', 'danger');
+            }
+        }
+
+        function renderProduits(data) {
+            const tbody = document.getElementById('produitsTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucun produit</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(p => `
+                <tr>
+                    <td>${p.reference || '-'}</td>
+                    <td><strong>${p.nom}</strong></td>
+                    <td>${p.categorie || '-'}</td>
+                    <td>${formatCurrency(p.prixUnitaire)}</td>
+                    <td><span class="${p.stock < 10 ? 'text-danger fw-bold' : ''}">${p.stock}</span></td>
+                    <td><span class="status-badge ${p.actif ? 'accepte' : 'refuse'}">${p.actif ? 'Actif' : 'Inactif'}</span></td>
+                    <td>
+                        <button class="action-btn edit" onclick="editProduit(${p.id})" title="Modifier"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn delete" onclick="deleteProduit(${p.id})" title="Supprimer"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterProduits() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = produits.filter(p => p.nom.toLowerCase().includes(search) || (p.reference && p.reference.toLowerCase().includes(search)));
+            renderProduits(filtered);
+        }
+
+        function openModal(produit = null) {
+            document.getElementById('modalTitle').textContent = produit ? 'Modifier Produit' : 'Nouveau Produit';
+            document.getElementById('produitId').value = produit?.id || '';
+            document.getElementById('reference').value = produit?.reference || '';
+            document.getElementById('categorie').value = produit?.categorie || '';
+            document.getElementById('nom').value = produit?.nom || '';
+            document.getElementById('description').value = produit?.description || '';
+            document.getElementById('prixUnitaire').value = produit?.prixUnitaire || '';
+            document.getElementById('tva').value = produit?.tva || '20';
+            document.getElementById('stock').value = produit?.stock || '0';
+            document.getElementById('actif').checked = produit?.actif !== false;
+            produitModal.show();
+        }
+
+        function editProduit(id) {
+            const produit = produits.find(p => p.id === id);
+            if (produit) openModal(produit);
+        }
+
+        async function saveProduit(event) {
+            event.preventDefault();
+            const id = document.getElementById('produitId').value;
+            const data = {
+                reference: document.getElementById('reference').value,
+                categorie: document.getElementById('categorie').value,
+                nom: document.getElementById('nom').value,
+                description: document.getElementById('description').value,
+                prixUnitaire: parseFloat(document.getElementById('prixUnitaire').value),
+                tva: parseFloat(document.getElementById('tva').value),
+                stock: parseInt(document.getElementById('stock').value),
+                actif: document.getElementById('actif').checked
+            };
+
+            try {
+                if (id) {
+                    await apiCall(`/api/produits/${id}`, { method: 'PUT', body: data });
+                    showToast('Produit modifié avec succès');
+                } else {
+                    await apiCall('/api/produits', { method: 'POST', body: data });
+                    showToast('Produit créé avec succès');
+                }
+                produitModal.hide();
+                await loadProduits();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+            return false;
+        }
+
+        async function deleteProduit(id) {
+            if (await confirmAction('Supprimer ce produit ?')) {
+                try {
+                    await apiCall(`/api/produits/${id}`, { method: 'DELETE' });
+                    showToast('Produit supprimé');
+                    await loadProduits();
+                } catch (error) {
+                    showToast('Erreur lors de la suppression', 'danger');
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

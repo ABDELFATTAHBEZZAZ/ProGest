@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factures - Gestion Commerciale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header"><i class="bi bi-briefcase-fill"></i>
+            <h2>Gestion Commerciale</h2>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Menu Principal</div>
+            <a href="dashboard.html" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
+            <a href="clients.html" class="nav-item"><i class="bi bi-people"></i><span>Clients</span></a>
+            <a href="produits.html" class="nav-item"><i class="bi bi-box-seam"></i><span>Produits</span></a>
+            <a href="devis.html" class="nav-item"><i class="bi bi-file-text"></i><span>Devis</span></a>
+            <a href="factures.html" class="nav-item active"><i class="bi bi-receipt"></i><span>Factures</span></a>
+            <div class="nav-section">Communication</div>
+            <a href="chat.html" class="nav-item"><i class="bi bi-chat-dots"></i><span>Messagerie</span></a>
+            <div class="nav-section admin-only" id="adminSection" style="display:none;">Administration</div>
+            <a href="users.html" class="nav-item admin-only" id="usersLink" style="display:none;"><i
+                    class="bi bi-person-gear"></i><span>Utilisateurs</span></a>
+            <a href="statistics.html" class="nav-item admin-only" id="statsLink" style="display:none;"><i
+                    class="bi bi-graph-up"></i><span>Statistiques</span></a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">Gestion des Factures</h1>
+            <div class="user-menu">
+                <div class="dropdown">
+                    <div class="user-info" data-bs-toggle="dropdown">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userName">Utilisateur</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i
+                                    class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h3><i class="bi bi-receipt me-2"></i>Liste des Factures</h3>
+                    <button class="btn btn-primary" onclick="openFactureModal()">
+                        <i class="bi bi-plus-lg me-2"></i>Nouvelle Facture
+                    </button>
+                </div>
+                <div class="data-card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Numéro</th>
+                                    <th>Client</th>
+                                    <th>Date</th>
+                                    <th>Montant TTC</th>
+                                    <th>Payé</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facturesTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Facture Modal -->
+    <div class="modal fade" id="factureModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nouvelle Facture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="factureForm" onsubmit="return saveFacture(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Client *</label>
+                            <select class="form-select" id="clientId" required></select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Montant HT (MAD) *</label>
+                                <input type="number" step="0.01" class="form-control" id="montantHT" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">TVA (%)</label>
+                                <input type="number" step="0.01" class="form-control" id="tva" value="20">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Créer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paiement Modal -->
+    <div class="modal fade" id="paiementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enregistrer un paiement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="paiementForm" onsubmit="return savePaiement(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="paiementFactureId">
+                        <div class="alert alert-info">
+                            Reste à payer: <strong id="resteAPayer">0.00 MAD</strong>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Montant *</label>
+                            <input type="number" step="0.01" class="form-control" id="montantPaiement" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mode de paiement *</label>
+                            <select class="form-select" id="modePaiement" required>
+                                <option value="ESPECES">Espèces</option>
+                                <option value="CHEQUE">Chèque</option>
+                                <option value="VIREMENT">Virement</option>
+                                <option value="CARTE_BANCAIRE">Carte bancaire</option>
+                                <option value="PAYPAL">PayPal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        if (!protectPage()) throw new Error('Not authenticated');
+
+        let facturesList = [], clients = [];
+        let factureModal, paiementModal;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            if (isAdmin()) {
+                document.getElementById('adminSection').style.display = '';
+                document.getElementById('usersLink').style.display = '';
+                document.getElementById('statsLink').style.display = '';
+            }
+            factureModal = new bootstrap.Modal(document.getElementById('factureModal'));
+            paiementModal = new bootstrap.Modal(document.getElementById('paiementModal'));
+            await Promise.all([loadFactures(), loadClients()]);
+        });
+
+        async function loadFactures() {
+            try {
+                facturesList = await apiCall('/api/factures') || [];
+                renderFactures();
+            } catch (e) { showToast('Erreur chargement', 'danger'); }
+        }
+
+        async function loadClients() {
+            clients = await apiCall('/api/clients') || [];
+            const select = document.getElementById('clientId');
+            select.innerHTML = '<option value="">Sélectionner un client</option>' +
+                clients.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        }
+
+        function renderFactures() {
+            const tbody = document.getElementById('facturesTable');
+            if (facturesList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucune facture</td></tr>';
+                return;
+            }
+            tbody.innerHTML = facturesList.map(f => `
+                <tr>
+                    <td><strong>${f.numero}</strong></td>
+                    <td>${f.client?.nom || '-'}</td>
+                    <td>${formatDate(f.dateFacture)}</td>
+                    <td>${formatCurrency(f.montantTTC)}</td>
+                    <td>${formatCurrency(f.montantPaye)}</td>
+                    <td><span class="status-badge ${f.statut.toLowerCase()}">${f.statut.replace('_', ' ')}</span></td>
+                    <td>
+                        <button class="action-btn download" onclick="downloadPdf(${f.id})" title="PDF"><i class="bi bi-file-pdf"></i></button>
+                        ${f.statut !== 'PAYEE' && f.statut !== 'ANNULEE' ? `<button class="action-btn edit" onclick="openPaiementModal(${f.id})" title="Paiement"><i class="bi bi-cash"></i></button>` : ''}
+                        <button class="action-btn delete" onclick="deleteFacture(${f.id})" title="Supprimer"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openFactureModal() {
+            document.getElementById('factureForm').reset();
+            document.getElementById('tva').value = '20';
+            factureModal.show();
+        }
+
+        async function saveFacture(event) {
+            event.preventDefault();
+            const data = {
+                clientId: parseInt(document.getElementById('clientId').value),
+                montantHT: parseFloat(document.getElementById('montantHT').value),
+                tva: parseFloat(document.getElementById('tva').value),
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                await apiCall('/api/factures/directe', { method: 'POST', body: data });
+                showToast('Facture créée avec succès');
+                factureModal.hide();
+                await loadFactures();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+            return false;
+        }
+
+        function openPaiementModal(id) {
+            const facture = facturesList.find(f => f.id === id);
+            if (facture) {
+                const reste = facture.montantTTC - facture.montantPaye;
+                document.getElementById('paiementFactureId').value = id;
+                document.getElementById('resteAPayer').textContent = formatCurrency(reste);
+                document.getElementById('montantPaiement').value = reste;
+                document.getElementById('montantPaiement').max = reste;
+                paiementModal.show();
+            }
+        }
+
+        async function savePaiement(event) {
+            event.preventDefault();
+            const id = document.getElementById('paiementFactureId').value;
+            const data = {
+                montant: parseFloat(document.getElementById('montantPaiement').value),
+                modePaiement: document.getElementById('modePaiement').value
+            };
+
+            try {
+                await apiCall(`/api/factures/${id}/paiement`, { method: 'PUT', body: data });
+                showToast('Paiement enregistré');
+                paiementModal.hide();
+                await loadFactures();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+            return false;
+        }
+
+        async function downloadPdf(id) {
+            const facture = facturesList.find(f => f.id === id);
+            await downloadFile(`/api/factures/${id}/pdf`, `facture-${facture.numero}.pdf`);
+        }
+
+        async function deleteFacture(id) {
+            if (await confirmAction('Supprimer cette facture ?')) {
+                try {
+                    await apiCall(`/api/factures/${id}`, { method: 'DELETE' });
+                    showToast('Facture supprimée');
+                    await loadFactures();
+                } catch (e) { showToast('Erreur', 'danger'); }
+            }
+        }
+    </script>
+</body>
+
+</html>

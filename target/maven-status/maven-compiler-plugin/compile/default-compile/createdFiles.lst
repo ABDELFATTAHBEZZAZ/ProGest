@@ -1,0 +1,4 @@
+com\gestion\service\MessageService.class
+com\gestion\config\DataInitializer.class
+com\gestion\security\SecurityConfig.class
+com\gestion\service\ProduitService.class

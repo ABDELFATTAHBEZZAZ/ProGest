@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devis - Gestion Commerciale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header"><i class="bi bi-briefcase-fill"></i>
+            <h2>GestionPro</h2>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Menu Principal</div>
+            <a href="dashboard.html" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
+            <a href="clients.html" class="nav-item"><i class="bi bi-people"></i><span>Clients</span></a>
+            <a href="produits.html" class="nav-item"><i class="bi bi-box-seam"></i><span>Produits</span></a>
+            <a href="devis.html" class="nav-item active"><i class="bi bi-file-text"></i><span>Devis</span></a>
+            <a href="factures.html" class="nav-item"><i class="bi bi-receipt"></i><span>Factures</span></a>
+            <div class="nav-section">Communication</div>
+            <a href="chat.html" class="nav-item"><i class="bi bi-chat-dots"></i><span>Messagerie</span></a>
+            <div class="nav-section admin-only" id="adminSection" style="display:none;">Administration</div>
+            <a href="users.html" class="nav-item admin-only" id="usersLink" style="display:none;"><i
+                    class="bi bi-person-gear"></i><span>Utilisateurs</span></a>
+            <a href="statistics.html" class="nav-item admin-only" id="statsLink" style="display:none;"><i
+                    class="bi bi-graph-up"></i><span>Statistiques</span></a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title"><i class="bi bi-file-text me-2"></i>Gestion des Devis</h1>
+            <div class="user-menu">
+                <div class="dropdown">
+                    <div class="user-info" data-bs-toggle="dropdown">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userName">Utilisateur</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i
+                                    class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h3><i class="bi bi-file-text me-2"></i>Liste des Devis</h3>
+                    <button class="btn btn-primary" onclick="openDevisModal()">
+                        <i class="bi bi-plus-lg me-2"></i>Nouveau Devis
+                    </button>
+                </div>
+                <div class="data-card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Numéro</th>
+                                    <th>Client</th>
+                                    <th>Date</th>
+                                    <th>Total TTC</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="devisTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Devis Create Modal -->
+    <div class="modal fade" id="devisModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nouveau Devis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="devisForm" onsubmit="return saveDevis(event)">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Client *</label>
+                                <select class="form-select" id="clientId" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Validité (jours)</label>
+                                <input type="number" class="form-control" id="validiteDays" value="30">
+                            </div>
+                        </div>
+                        <h6 class="mb-3"><i class="bi bi-box-seam me-2"></i>Produits</h6>
+                        <div id="lignesContainer"></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addLigne()">
+                            <i class="bi bi-plus"></i> Ajouter un produit
+                        </button>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="totals-box">
+                                    <div class="totals-row"><span>Total HT:</span><strong id="displayHT">0.00
+                                            MAD</strong>
+                                    </div>
+                                    <div class="totals-row"><span>TVA:</span><strong id="displayTVA">0.00 MAD</strong>
+                                    </div>
+                                    <div class="totals-row total"><span>Total TTC:</span><strong id="displayTTC">0.00
+                                            MAD</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Créer le
+                            devis</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Devis View Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-eye me-2"></i>Détails du Devis <span id="viewNumero"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Numéro</label>
+                            <span id="viewDevisNumero">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Client</label>
+                            <span id="viewClient">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Date de création</label>
+                            <span id="viewDateCreation">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Date de validité</label>
+                            <span id="viewDateValidite">-</span>
+                        </div>
+                        <div class="detail-item success">
+                            <label>Statut</label>
+                            <span id="viewStatut">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Notes</label>
+                            <span id="viewNotes">-</span>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3"><i class="bi bi-list-ul me-2"></i>Produits commandés</h6>
+                    <div class="table-responsive products-table">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Prix Unit.</th>
+                                    <th>Qté</th>
+                                    <th>Remise</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="viewLignes"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="totals-box">
+                        <div class="totals-row"><span>Total HT</span><span id="viewTotalHT">0.00 MAD</span></div>
+                        <div class="totals-row"><span>TVA</span><span id="viewTotalTVA">0.00 MAD</span></div>
+                        <div class="totals-row total"><span>Total TTC</span><span id="viewTotalTTC">0.00 MAD</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="downloadCurrentPdf()">
+                        <i class="bi bi-file-pdf me-2"></i>Télécharger PDF
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        if (!protectPage()) throw new Error('Not authenticated');
+
+        let devisList = [], clients = [], produits = [];
+        let devisModal, viewModal, ligneCount = 0, currentDevisId = null;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            if (isAdmin()) {
+                document.getElementById('adminSection').style.display = '';
+                document.getElementById('usersLink').style.display = '';
+                document.getElementById('statsLink').style.display = '';
+            }
+            devisModal = new bootstrap.Modal(document.getElementById('devisModal'));
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+            await Promise.all([loadDevis(), loadClients(), loadProduits()]);
+        });
+
+        async function loadDevis() {
+            try {
+                devisList = await apiCall('/api/devis') || [];
+                renderDevis();
+            } catch (e) { showToast('Erreur chargement devis', 'danger'); }
+        }
+
+        async function loadClients() {
+            clients = await apiCall('/api/clients') || [];
+            const select = document.getElementById('clientId');
+            select.innerHTML = '<option value="">Sélectionner un client</option>' +
+                clients.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        }
+
+        async function loadProduits() {
+            produits = await apiCall('/api/produits') || [];
+        }
+
+        function renderDevis() {
+            const tbody = document.getElementById('devisTable');
+            if (devisList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Aucun devis</td></tr>';
+                return;
+            }
+            tbody.innerHTML = devisList.map(d => `
+                <tr class="animate-in">
+                    <td><strong>${d.numero}</strong></td>
+                    <td>${d.client?.nom || '-'}</td>
+                    <td>${formatDate(d.dateCreation)}</td>
+                    <td><strong>${formatCurrency(d.totalTTC)}</strong></td>
+                    <td><span class="status-badge ${d.statut.toLowerCase()}">${d.statut}</span></td>
+                    <td>
+                        <button class="action-btn view" onclick="viewDevis(${d.id})" title="Voir détails"><i class="bi bi-eye"></i></button>
+                        <button class="action-btn download" onclick="downloadPdf(${d.id})" title="Télécharger PDF"><i class="bi bi-file-pdf"></i></button>
+                        ${d.statut === 'BROUILLON' || d.statut === 'ENVOYE' ? `<button class="action-btn edit" onclick="validerDevis(${d.id})" title="Valider & Facturer"><i class="bi bi-check-lg"></i></button>` : ''}
+                        <button class="action-btn delete" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openDevisModal() {
+            document.getElementById('devisForm').reset();
+            document.getElementById('lignesContainer').innerHTML = '';
+            ligneCount = 0;
+            addLigne();
+            updateTotals();
+            devisModal.show();
+        }
+
+        function addLigne() {
+            const container = document.getElementById('lignesContainer');
+            const div = document.createElement('div');
+            div.className = 'row mb-2 ligne-item';
+            div.innerHTML = `
+                <div class="col-md-5">
+                    <select class="form-select form-select-sm produit-select" onchange="updateTotals()" required>
+                        <option value="">Produit</option>
+                        ${produits.filter(p => p.actif).map(p => `<option value="${p.id}" data-prix="${p.prixUnitaire}" data-tva="${p.tva}">${p.nom} (${formatCurrency(p.prixUnitaire)})</option>`).join('')}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control form-control-sm quantite-input" placeholder="Qté" min="1" value="1" onchange="updateTotals()" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" step="0.01" class="form-control form-control-sm remise-input" placeholder="Remise %" value="0" onchange="updateTotals()">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.ligne-item').remove(); updateTotals()"><i class="bi bi-x"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+            ligneCount++;
+        }
+
+        function updateTotals() {
+            let totalHT = 0, totalTVA = 0;
+            document.querySelectorAll('.ligne-item').forEach(ligne => {
+                const select = ligne.querySelector('.produit-select');
+                const qte = parseInt(ligne.querySelector('.quantite-input').value) || 0;
+                const remise = parseFloat(ligne.querySelector('.remise-input').value) || 0;
+                const opt = select.options[select.selectedIndex];
+                if (opt && opt.value) {
+                    const prix = parseFloat(opt.dataset.prix);
+                    const tva = parseFloat(opt.dataset.tva);
+                    let ligneHT = prix * qte * (1 - remise / 100);
+                    totalHT += ligneHT;
+                    totalTVA += ligneHT * tva / 100;
+                }
+            });
+            document.getElementById('displayHT').textContent = formatCurrency(totalHT);
+            document.getElementById('displayTVA').textContent = formatCurrency(totalTVA);
+            document.getElementById('displayTTC').textContent = formatCurrency(totalHT + totalTVA);
+        }
+
+        async function saveDevis(event) {
+            event.preventDefault();
+            const lignes = [];
+            document.querySelectorAll('.ligne-item').forEach(ligne => {
+                const produitId = ligne.querySelector('.produit-select').value;
+                const quantite = parseInt(ligne.querySelector('.quantite-input').value);
+                const remise = parseFloat(ligne.querySelector('.remise-input').value) || 0;
+                if (produitId && quantite > 0) {
+                    lignes.push({ produitId: parseInt(produitId), quantite, remise });
+                }
+            });
+            if (lignes.length === 0) {
+                showToast('Ajoutez au moins un produit', 'warning');
+                return false;
+            }
+            const data = {
+                clientId: parseInt(document.getElementById('clientId').value),
+                validiteDays: parseInt(document.getElementById('validiteDays').value),
+                notes: document.getElementById('notes').value,
+                lignes
+            };
+            try {
+                await apiCall('/api/devis', { method: 'POST', body: data });
+                showToast('Devis créé avec succès');
+                devisModal.hide();
+                await loadDevis();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+            return false;
+        }
+
+        async function viewDevis(id) {
+            currentDevisId = id;
+            try {
+                const devis = await apiCall(`/api/devis/${id}`);
+                if (!devis) return;
+
+                document.getElementById('viewDevisNumero').textContent = devis.numero;
+                document.getElementById('viewNumero').textContent = devis.numero;
+                document.getElementById('viewClient').textContent = devis.client?.nom || '-';
+                document.getElementById('viewDateCreation').textContent = formatDate(devis.dateCreation);
+                document.getElementById('viewDateValidite').textContent = formatDate(devis.dateValidite);
+                document.getElementById('viewStatut').innerHTML = `<span class="status-badge ${devis.statut.toLowerCase()}">${devis.statut}</span>`;
+                document.getElementById('viewNotes').textContent = devis.notes || 'Aucune note';
+                document.getElementById('viewTotalHT').textContent = formatCurrency(devis.totalHT);
+                document.getElementById('viewTotalTVA').textContent = formatCurrency(devis.totalTVA);
+                document.getElementById('viewTotalTTC').textContent = formatCurrency(devis.totalTTC);
+
+                const lignes = devis.lignes || [];
+                const tbody = document.getElementById('viewLignes');
+                if (lignes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aucun produit</td></tr>';
+                } else {
+                    tbody.innerHTML = lignes.map(l => `
+                        <tr>
+                            <td>${l.produitNom || 'Produit'}</td>
+                            <td>${formatCurrency(l.prixUnitaire)}</td>
+                            <td>${l.quantite}</td>
+                            <td>${l.remise || 0}%</td>
+                            <td><strong>${formatCurrency(l.totalLigne)}</strong></td>
+                        </tr>
+                    `).join('');
+                }
+
+                viewModal.show();
+            } catch (e) {
+                showToast('Erreur lors du chargement', 'danger');
+            }
+        }
+
+        function downloadCurrentPdf() {
+            if (currentDevisId) downloadPdf(currentDevisId);
+        }
+
+        async function validerDevis(id) {
+            if (await confirmAction('Valider ce devis et générer la facture ?')) {
+                try {
+                    await apiCall(`/api/devis/${id}/valider`, { method: 'PUT' });
+                    showToast('Devis validé');
+                    await apiCall(`/api/factures/from-devis/${id}`, { method: 'POST' });
+                    showToast('Facture générée automatiquement');
+                    await loadDevis();
+                } catch (e) { showToast('Erreur', 'danger'); }
+            }
+        }
+
+        async function downloadPdf(id) {
+            const devis = devisList.find(d => d.id === id);
+            await downloadFile(`/api/devis/${id}/pdf`, `devis-${devis?.numero || id}.pdf`);
+        }
+
+        async function deleteDevis(id) {
+            if (await confirmAction('Supprimer ce devis ?')) {
+                try {
+                    await apiCall(`/api/devis/${id}`, { method: 'DELETE' });
+                    showToast('Devis supprimé');
+                    await loadDevis();
+                } catch (e) { showToast('Ce devis ne peut pas être supprimé', 'danger'); }
+            }
+        }
+    </script>
+</body>
+
+</html>

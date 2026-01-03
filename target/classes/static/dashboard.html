@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestion Commerciale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-briefcase-fill"></i>
+            <h2>GestionPro</h2>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Menu Principal</div>
+            <a href="dashboard.html" class="nav-item active">
+                <i class="bi bi-speedometer2"></i>
+                <span>Tableau de bord</span>
+            </a>
+            <a href="clients.html" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Clients</span>
+            </a>
+            <a href="produits.html" class="nav-item">
+                <i class="bi bi-box-seam"></i>
+                <span>Produits</span>
+            </a>
+            <a href="devis.html" class="nav-item">
+                <i class="bi bi-file-text"></i>
+                <span>Devis</span>
+            </a>
+            <a href="factures.html" class="nav-item">
+                <i class="bi bi-receipt"></i>
+                <span>Factures</span>
+            </a>
+
+            <div class="nav-section">Communication</div>
+            <a href="chat.html" class="nav-item">
+                <i class="bi bi-chat-dots"></i>
+                <span>Messagerie</span>
+            </a>
+
+            <div class="nav-section admin-only" id="adminSection" style="display:none;">Administration</div>
+            <a href="users.html" class="nav-item admin-only" id="usersLink" style="display:none;">
+                <i class="bi bi-person-gear"></i>
+                <span>Utilisateurs</span>
+            </a>
+            <a href="statistics.html" class="nav-item admin-only" id="statsLink" style="display:none;">
+                <i class="bi bi-graph-up"></i>
+                <span>Statistiques</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">
+                <i class="bi bi-lightning-charge me-2"></i>Tableau de bord
+            </h1>
+            <div class="user-menu">
+                <div class="dropdown">
+                    <div class="user-info" data-bs-toggle="dropdown">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userName">Utilisateur</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card animate-in" style="animation-delay: 0.1s">
+                        <div class="icon primary"><i class="bi bi-people-fill"></i></div>
+                        <h3 id="totalClients">0</h3>
+                        <p>Clients actifs</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card animate-in" style="animation-delay: 0.2s">
+                        <div class="icon warning"><i class="bi bi-file-text-fill"></i></div>
+                        <h3 id="totalDevis">0</h3>
+                        <p>Devis créés</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card animate-in" style="animation-delay: 0.3s">
+                        <div class="icon success"><i class="bi bi-receipt-cutoff"></i></div>
+                        <h3 id="totalFactures">0</h3>
+                        <p>Factures émises</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card animate-in" style="animation-delay: 0.4s">
+                        <div class="icon danger"><i class="bi bi-currency-euro"></i></div>
+                        <h3 id="chiffreAffaires">0 MAD</h3>
+                        <p>Chiffre d'affaires</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="data-card animate-in" style="animation-delay: 0.5s">
+                        <div class="data-card-header">
+                            <h3><i class="bi bi-graph-up-arrow me-2"></i>Évolution Mensuelle</h3>
+                        </div>
+                        <div class="data-card-body">
+                            <div class="chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="data-card animate-in" style="animation-delay: 0.6s">
+                        <div class="data-card-header">
+                            <h3><i class="bi bi-pie-chart-fill me-2"></i>Statuts Devis</h3>
+                        </div>
+                        <div class="data-card-body">
+                            <div class="chart-container">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Recent Devis -->
+                <div class="col-lg-6">
+                    <div class="data-card animate-in" style="animation-delay: 0.7s">
+                        <div class="data-card-header">
+                            <h3><i class="bi bi-file-text me-2"></i>Derniers Devis</h3>
+                            <a href="devis.html" class="btn btn-sm btn-outline-primary">Voir tout</a>
+                        </div>
+                        <div class="data-card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Numéro</th>
+                                            <th>Client</th>
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentDevis">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Chargement...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Factures -->
+                <div class="col-lg-6">
+                    <div class="data-card animate-in" style="animation-delay: 0.8s">
+                        <div class="data-card-header">
+                            <h3><i class="bi bi-receipt me-2"></i>Dernières Factures</h3>
+                            <a href="factures.html" class="btn btn-sm btn-outline-primary">Voir tout</a>
+                        </div>
+                        <div class="data-card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Numéro</th>
+                                            <th>Client</th>
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentFactures">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Chargement...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        if (!protectPage()) throw new Error('Not authenticated');
+
+        let revenueChart, statusChart;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+
+            if (isAdmin()) {
+                document.getElementById('adminSection').style.display = '';
+                document.getElementById('usersLink').style.display = '';
+                document.getElementById('statsLink').style.display = '';
+            }
+
+            initCharts();
+            await loadDashboardData();
+        });
+
+        function initCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const gradient = revenueCtx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+            gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+                    datasets: [{
+                        label: 'Chiffre d\'affaires',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#6366f1',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                callback: value => formatCurrency(value)
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Status Doughnut Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Accepté', 'En attente', 'Refusé', 'Brouillon'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(148, 163, 184, 0.8)'
+                        ],
+                        borderColor: [
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#94a3b8'
+                        ],
+                        borderWidth: 2,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: { size: 11, weight: '500' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                if (isAdmin()) {
+                    const stats = await apiCall('/api/statistics');
+                    if (stats) {
+                        document.getElementById('totalClients').textContent = stats.totalClients;
+                        document.getElementById('totalDevis').textContent = stats.totalDevis;
+                        document.getElementById('totalFactures').textContent = stats.totalFactures;
+                        document.getElementById('chiffreAffaires').textContent = formatCurrency(stats.chiffreAffaires || 0);
+                    }
+                } else {
+                    const [clients, devis, factures] = await Promise.all([
+                        apiCall('/api/clients'),
+                        apiCall('/api/devis'),
+                        apiCall('/api/factures')
+                    ]);
+                    document.getElementById('totalClients').textContent = clients?.length || 0;
+                    document.getElementById('totalDevis').textContent = devis?.length || 0;
+                    document.getElementById('totalFactures').textContent = factures?.length || 0;
+                }
+
+                // Load all data for charts
+                const [devis, factures] = await Promise.all([
+                    apiCall('/api/devis'),
+                    apiCall('/api/factures')
+                ]);
+
+                // Update status chart
+                if (devis && devis.length > 0) {
+                    const statusCounts = {
+                        ACCEPTE: 0,
+                        ENVOYE: 0,
+                        REFUSE: 0,
+                        BROUILLON: 0
+                    };
+                    devis.forEach(d => {
+                        if (statusCounts.hasOwnProperty(d.statut)) {
+                            statusCounts[d.statut]++;
+                        }
+                    });
+                    statusChart.data.datasets[0].data = [
+                        statusCounts.ACCEPTE,
+                        statusCounts.ENVOYE,
+                        statusCounts.REFUSE,
+                        statusCounts.BROUILLON
+                    ];
+                    statusChart.update();
+                }
+
+                // Update revenue chart (mock monthly data based on factures)
+                if (factures && factures.length > 0) {
+                    const monthlyRevenue = new Array(12).fill(0);
+                    factures.forEach(f => {
+                        if (f.dateFacture) {
+                            const month = new Date(f.dateFacture).getMonth();
+                            monthlyRevenue[month] += parseFloat(f.montantTTC) || 0;
+                        }
+                    });
+                    revenueChart.data.datasets[0].data = monthlyRevenue;
+                    revenueChart.update();
+
+                    // Calculate total CA
+                    const totalCA = factures.reduce((sum, f) => sum + (parseFloat(f.montantTTC) || 0), 0);
+                    document.getElementById('chiffreAffaires').textContent = formatCurrency(totalCA);
+                }
+
+                // Load recent devis
+                if (devis) {
+                    const recentDevis = devis.slice(0, 5);
+                    const tbody = document.getElementById('recentDevis');
+                    if (recentDevis.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Aucun devis</td></tr>';
+                    } else {
+                        tbody.innerHTML = recentDevis.map(d => `
+                            <tr>
+                                <td><strong>${d.numero}</strong></td>
+                                <td>${d.client?.nom || '-'}</td>
+                                <td>${formatCurrency(d.totalTTC)}</td>
+                                <td><span class="status-badge ${d.statut.toLowerCase()}">${d.statut}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+
+                // Load recent factures
+                if (factures) {
+                    const recentFactures = factures.slice(0, 5);
+                    const tbody = document.getElementById('recentFactures');
+                    if (recentFactures.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Aucune facture</td></tr>';
+                    } else {
+                        tbody.innerHTML = recentFactures.map(f => `
+                            <tr>
+                                <td><strong>${f.numero}</strong></td>
+                                <td>${f.client?.nom || '-'}</td>
+                                <td>${formatCurrency(f.montantTTC)}</td>
+                                <td><span class="status-badge ${f.statut.toLowerCase()}">${f.statut.replace('_', ' ')}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Erreur lors du chargement des données', 'danger');
+            }
+        }
+    </script>
+</body>
+
+</html>

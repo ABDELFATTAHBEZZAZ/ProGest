@@ -1,0 +1,27 @@
+package com.gestion.repository;
+
+import com.gestion.entity.Message;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface MessageRepository extends JpaRepository<Message, Long> {
+    List<Message> findByClientIdOrderByTimestampAsc(Long clientId);
+
+    List<Message> findByDevisIdOrderByTimestampAsc(Long devisId);
+
+    List<Message> findByFactureIdOrderByTimestampAsc(Long factureId);
+
+    List<Message> findByRoomIdOrderByTimestampAsc(String roomId);
+
+    @Query("SELECT m FROM Message m WHERE (m.sender.id = :userId1 AND m.recipient.id = :userId2) OR (m.sender.id = :userId2 AND m.recipient.id = :userId1) ORDER BY m.timestamp ASC")
+    List<Message> findConversation(Long userId1, Long userId2);
+
+    List<Message> findByRecipientIdAndIsReadFalse(Long recipientId);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.recipient.id = :userId AND m.isRead = false")
+    Long countUnreadMessages(Long userId);
+}

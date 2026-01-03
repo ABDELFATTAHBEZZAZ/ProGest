@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Gestion Commerciale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/chat.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header"><i class="bi bi-briefcase-fill"></i>
+            <h2>Gestion Commerciale</h2>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Menu Principal</div>
+            <a href="dashboard.html" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
+            <a href="clients.html" class="nav-item"><i class="bi bi-people"></i><span>Clients</span></a>
+            <a href="produits.html" class="nav-item"><i class="bi bi-box-seam"></i><span>Produits</span></a>
+            <a href="devis.html" class="nav-item"><i class="bi bi-file-text"></i><span>Devis</span></a>
+            <a href="factures.html" class="nav-item"><i class="bi bi-receipt"></i><span>Factures</span></a>
+            <div class="nav-section">Communication</div>
+            <a href="chat.html" class="nav-item active"><i class="bi bi-chat-dots"></i><span>Messagerie</span></a>
+            <div class="nav-section admin-only" id="adminSection" style="display:none;">Administration</div>
+            <a href="users.html" class="nav-item admin-only" id="usersLink" style="display:none;"><i
+                    class="bi bi-person-gear"></i><span>Utilisateurs</span></a>
+            <a href="statistics.html" class="nav-item admin-only" id="statsLink" style="display:none;"><i
+                    class="bi bi-graph-up"></i><span>Statistiques</span></a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">Messagerie Temps Réel</h1>
+            <div class="user-menu">
+                <div class="dropdown">
+                    <div class="user-info" data-bs-toggle="dropdown">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userName">Utilisateur</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i
+                                    class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="chat-container">
+                <div class="chat-sidebar">
+                    <div class="chat-sidebar-header">
+                        <h5><i class="bi bi-people me-2"></i>Utilisateurs en ligne</h5>
+                    </div>
+                    <div class="online-users" id="onlineUsers">
+                        <p class="text-muted text-center p-3">Chargement...</p>
+                    </div>
+                    <div class="chat-rooms">
+                        <h6 class="px-3 py-2 text-muted">Salons</h6>
+                        <div class="room-item active" data-room="general" onclick="joinRoom('general')">
+                            <i class="bi bi-hash"></i> Général
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <h5 id="currentRoomName"># Général</h5>
+                        <span class="text-muted" id="typingIndicator"></span>
+                    </div>
+
+                    <div class="chat-messages" id="messageContainer">
+                        <div class="text-center text-muted p-5">
+                            <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
+                            <p>Connexion au chat...</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <button class="btn btn-outline-secondary"
+                                onclick="document.getElementById('imageInput').click()" title="Image">
+                                <i class="bi bi-image"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleAudioRecording()" id="audioBtn"
+                                title="Audio">
+                                <i class="bi bi-mic"></i>
+                            </button>
+                            <input type="file" id="imageInput" accept="image/*" style="display:none"
+                                onchange="sendImage(event)">
+                            <input type="text" class="form-control" id="messageInput"
+                                placeholder="Écrivez votre message..." onkeypress="handleKeyPress(event)">
+                            <button class="btn btn-primary" onclick="sendMessage()">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        if (!protectPage()) throw new Error('Not authenticated');
+
+        let stompClient = null;
+        let currentRoom = 'general';
+        let user;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            if (isAdmin()) {
+                document.getElementById('adminSection').style.display = '';
+                document.getElementById('usersLink').style.display = '';
+                document.getElementById('statsLink').style.display = '';
+            }
+            connect();
+        });
+
+        function connect() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; // Disable debug
+
+            stompClient.connect({}, function (frame) {
+                console.log('Connected to WebSocket');
+
+                // Subscribe to room
+                subscribeToRoom(currentRoom);
+
+                // Subscribe to online users
+                stompClient.subscribe('/topic/users.online', function (msg) {
+                    const users = JSON.parse(msg.body);
+                    displayOnlineUsers(users);
+                });
+
+                // Join room
+                stompClient.send(`/app/chat.addUser/${currentRoom}`, {}, JSON.stringify({
+                    senderUsername: user.username,
+                    senderId: user.id,
+                    type: 'TEXT'
+                }));
+
+                showSystemMessage('Connecté au chat');
+                loadRoomHistory(currentRoom);
+            }, function (error) {
+                console.error('WebSocket error:', error);
+                showSystemMessage('Erreur de connexion. Nouvelle tentative...', 'error');
+                setTimeout(connect, 5000);
+            });
+        }
+
+        function subscribeToRoom(roomId) {
+            stompClient.subscribe(`/topic/room/${roomId}`, function (msg) {
+                const message = JSON.parse(msg.body);
+                displayMessage(message);
+            });
+
+            stompClient.subscribe(`/topic/room/${roomId}/typing`, function (msg) {
+                const data = JSON.parse(msg.body);
+                if (data.senderUsername !== user.username) {
+                    document.getElementById('typingIndicator').textContent = `${data.senderUsername} est en train d'écrire...`;
+                    setTimeout(() => { document.getElementById('typingIndicator').textContent = ''; }, 2000);
+                }
+            });
+        }
+
+        function joinRoom(roomId) {
+            currentRoom = roomId;
+            document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-room="${roomId}"]`)?.classList.add('active');
+            document.getElementById('currentRoomName').textContent = '# ' + roomId.charAt(0).toUpperCase() + roomId.slice(1);
+            document.getElementById('messageContainer').innerHTML = '';
+            loadRoomHistory(roomId);
+        }
+
+        async function loadRoomHistory(roomId) {
+            try {
+                const messages = await apiCall(`/api/messages/room/${roomId}`);
+                if (messages) {
+                    messages.forEach(msg => displayMessage(msg, false));
+                    scrollToBottom();
+                }
+            } catch (e) {
+                console.error('Error loading history:', e);
+            }
+        }
+
+        function displayOnlineUsers(users) {
+            const container = document.getElementById('onlineUsers');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center p-3">Aucun utilisateur en ligne</p>';
+                return;
+            }
+            container.innerHTML = users.map(u => `
+                <div class="online-user">
+                    <span class="online-indicator online"></span>
+                    <span>${u.username}</span>
+                    ${u.role === 'ADMIN' ? '<span class="badge bg-primary ms-auto">Admin</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function displayMessage(message, scroll = true) {
+            const container = document.getElementById('messageContainer');
+            const isOwn = message.senderUsername === user.username;
+
+            let content = '';
+            if (message.type === 'IMAGE' && message.imagePath) {
+                content = `<img src="${message.imagePath}" alt="Image" class="chat-image" onclick="window.open('${message.imagePath}')">`;
+            } else if (message.type === 'AUDIO' && message.audioPath) {
+                content = `<audio controls src="${message.audioPath}"></audio>`;
+            } else {
+                content = `<p class="message-text">${escapeHtml(message.content || '')}</p>`;
+            }
+
+            const html = `
+                <div class="message ${isOwn ? 'own' : ''}">
+                    <div class="message-header">
+                        <strong>${message.senderUsername}</strong>
+                        <small>${formatTime(message.timestamp)}</small>
+                    </div>
+                    ${content}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            if (scroll) scrollToBottom();
+        }
+
+        function showSystemMessage(text, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            container.insertAdjacentHTML('beforeend', `
+                <div class="system-message ${type}">${text}</div>
+            `);
+            scrollToBottom();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content || !stompClient) return;
+
+            const message = {
+                senderUsername: user.username,
+                senderId: user.id,
+                content: content,
+                type: 'TEXT',
+                roomId: currentRoom
+            };
+
+            stompClient.send(`/app/chat.sendMessage/${currentRoom}`, {}, JSON.stringify(message));
+            input.value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            } else {
+                // Send typing indicator
+                stompClient.send(`/app/chat.typing/${currentRoom}`, {}, JSON.stringify({
+                    senderUsername: user.username
+                }));
+            }
+        }
+
+        async function sendImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const result = await uploadFile('/api/messages/upload/image', file);
+                const message = {
+                    senderUsername: user.username,
+                    senderId: user.id,
+                    type: 'IMAGE',
+                    imagePath: result.path,
+                    roomId: currentRoom
+                };
+                stompClient.send(`/app/chat.sendMessage/${currentRoom}`, {}, JSON.stringify(message));
+            } catch (e) {
+                showToast('Erreur upload image', 'danger');
+            }
+            event.target.value = '';
+        }
+
+        async function toggleAudioRecording() {
+            const btn = document.getElementById('audioBtn');
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-outline-secondary');
+            } else {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const file = new File([blob], 'audio.webm', { type: 'audio/webm' });
+
+                        try {
+                            const result = await uploadFile('/api/messages/upload/audio', file);
+                            const message = {
+                                senderUsername: user.username,
+                                senderId: user.id,
+                                type: 'AUDIO',
+                                audioPath: result.path,
+                                roomId: currentRoom
+                            };
+                            stompClient.send(`/app/chat.sendMessage/${currentRoom}`, {}, JSON.stringify(message));
+                        } catch (e) {
+                            showToast('Erreur upload audio', 'danger');
+                        }
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+
+                    mediaRecorder.start();
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-danger');
+                } catch (e) {
+                    showToast('Accès microphone refusé', 'warning');
+                }
+            }
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messageContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>
